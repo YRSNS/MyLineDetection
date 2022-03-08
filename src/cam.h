@@ -37,7 +37,7 @@ void camera::setFilename()
     m_filenames.clear();
 
     for(int i=0; i<NumImages; i++)
-        m_filenames.push_back(PATH+"calibration"+std::to_string(i+1)+".jpg");
+        m_filenames.push_back(PATH+"Cam"+std::to_string(i+1)+".jpg");
         //std::cout<<PATH+"calibration"+std::to_string(i+1)+".jpg"<<std::endl;
 }
 
