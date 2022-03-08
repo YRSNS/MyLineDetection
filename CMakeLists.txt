@@ -3,13 +3,16 @@ cmake_minimum_required(VERSION 3.5)
 set(CMAKE_CXX_STANDARD 14)
 
 PROJECT(SDC_line)
-
+find_package(Eigen3 REQUIRED)
+MESSAGE( [Main] " EIGEN3_INCLUDE_DIRS = ${EIGEN3_INCLUDE_DIRS}")
+#EIGEN3_INCLUDE_DIRS = /usr/include/eigen3
+include_directories(${EIGEN3_INCLUDE_DIRS})
 find_package( OpenCV REQUIRED ) #find_package( OpenCV 4 REQUIRED )
 
 include_directories( ${OpenCV_INCLUDE_DIRS})
 
 MACRO(add_example name)
-  ADD_EXECUTABLE(${name} src/${name}.cpp src/cam.h src/functions.h src/threshold.h)
+  ADD_EXECUTABLE(${name} src/${name}.cpp src/cam.h src/functions.h src/laneDetection.h)
   TARGET_LINK_LIBRARIES(${name} ${OpenCV_LIBS})
 ENDMACRO()
 

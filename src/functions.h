@@ -36,9 +36,10 @@ class funciones{
          destroyAllWindows();
     }
 
-    void ReadImage(string PATH){
+    void ReadImage(string name,cv::Mat image){
         Mat  img,imgGray,roi_image;
-        img = imread(PATH+"test2.jpg");
+        img = image.clone();
+        //img = imread(PATH+"test2.jpg");
         //cvtColor(img,imgGray,COLOR_BGR2GRAY);
 
         if(img.empty())
@@ -69,8 +70,8 @@ class funciones{
 
 
 
-        imshow("image",img);
-        imshow("roirect",roi_image);
+        imshow(name,img);
+        //imshow("roirect",roi_image);
         //imshow("image gray",imgGray);
         waitKey(0);
 
