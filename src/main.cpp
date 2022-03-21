@@ -8,7 +8,7 @@
 #include<iostream>
 #include <opencv2/imgproc.hpp>
 #include "cam.h"
-#include "functions.h"
+//#include "functions.h"
 #include "laneDetection.h"
 
 using namespace std;
@@ -16,13 +16,16 @@ using namespace cv;
 
 
 
-std::string PATH = "/home/yhon/Dev/MyLineDetection/img/calb/";
+std::string PATH = "/home/y3rsn/Dev/cpp/CV_2022/MyLineDetection/img/calb/";
+
 
 camera cam(PATH,2);
 funciones fun;
 
 
 VideoCapture laneVideo;
+float laneDistant = 0;
+
 Mat videoFrame; // Video Frame.
 Mat videoFrameUndistorted; // Video Frame (after calibration).
 Mat videoFramePerspective; // Video Frame (after perspective transform).
@@ -42,15 +45,17 @@ int main(int argc, char **argv)
 
 
 
-    laneVideo.open("/home/yhon/Dev/MyLineDetection/video/road.mp4");
+    laneVideo.open("/home/y3rsn/Dev/cpp/CV_2022/MyLineDetection/video/road.mp4");
     videoSize = Size((int)laneVideo.get(CAP_PROP_FRAME_WIDTH),(int)laneVideo.get(CAP_PROP_FRAME_HEIGHT));
 
 
     //--------------Camera Calibration Start-----------------
     FileStorage fsRead;
+    //--------------copy Intrinsic.xml in build
     fsRead.open("Intrinsic.xml", FileStorage::READ);
     Mat src = imread(PATH+"Cam2.jpg");
     Mat dst;
+
     if (fsRead.isOpened() == false)
     {
         cam.doCalibration(cameraMatrix, dist);
@@ -70,6 +75,7 @@ int main(int argc, char **argv)
         fsRead.release();
     }
     undistort(src, dst, cameraMatrix, dist);
+
     //--------------Camera Calibration Finish-----------------
 
     //Display Video Image   -->  get firts frame
@@ -87,39 +93,78 @@ int main(int argc, char **argv)
     //Start Homography
     warpPerspective(_videoFrameUndistorted, videoFramePerspective, perspectiveMatrix, videoSize);
     //namedWindow("Undistorsion", WINDOW_NORMAL);
-    imshow("videoFramePerspective",videoFramePerspective);
+    //imshow("videoFramePerspective",videoFramePerspective);
+    //fun.ReadImage("videoFrame",videoFramePerspective);
 
     //Applying lane detection algorithm
     laneDetection LaneAlgo(_videoFrameUndistorted, perspectiveMatrix);
-    LaneAlgo.laneDetctAlgo();
+    //LaneAlgo.laneDetctAlgo();
 
 
-    Mat warpEdge; warpEdge = LaneAlgo.getWarpEdgeDetectResult().clone();
-    fun.ReadImage("canny",warpEdge);
+    //Mat warpEdge; warpEdge = LaneAlgo.getWarpEdgeDetectResult().clone();
+    //fun.ReadImage("canny",warpEdge);
 
 
-    Mat imageRedChannel; imageRedChannel = LaneAlgo.getRedChannel().clone();
-
-    Mat redBinary; redBinary = LaneAlgo.getRedBinary().clone();
-
-    Mat mergeImage; mergeImage = LaneAlgo.getMergeImage().clone();
-
-    Mat histImage; histImage = LaneAlgo.getHistImage().clone();
-
-    Mat maskImage; maskImage = LaneAlgo.getMaskImage().clone();
-
-    Mat warpMask;  warpMask = LaneAlgo.getWarpMask().clone();
-
-    Mat finalResult; finalResult = LaneAlgo.getFinalResult().clone();
-
+    Mat finalResult;
+    Mat mergeImage;
+    Mat warpimage;
+    Mat otherwarp;
+    //= LaneAlgo.getFinalResult().clone();
     //imshow("resultado",finalResult);
-    fun.ReadImage("resultado",finalResult);
+    //fun.ReadImage("resultado",finalResult);
 
 
 
     //===========Finish Real Time Processing===========
+    stringstream ss;
+    //========== procesing using video ============
+    while(!videoFrame.empty())
+    {
+        //Start Homography
+        warpPerspective(_videoFrameUndistorted, videoFramePerspective, perspectiveMatrix, videoSize);
+
+        //Applying lane detection algorithm
+        //if(videoFrameCount == 0)
+        LaneAlgo.laneDetctAlgo();
+        //finalResult = LaneAlgo.getFinalResult();
+        finalResult = videoFrame;
+
+        mergeImage = LaneAlgo.getMergeImage();
+
+        warpimage = LaneAlgo.getMaskImage();
+        otherwarp = LaneAlgo.getWarpMask();
+
+
+        ss.str("");
+        ss.clear();
+        ss << "          Road  ";
+        putText(finalResult, ss.str(), Point(50,50), 0, 2, Scalar(0, 0, 255), 2);
+
+
+        imshow("Real Time Execution", fun.ResizeImage(finalResult,0.3));
+        imshow("mergeimage",fun.ResizeImage(mergeImage,0.3));
+        //imshow("warpimage",fun.ResizeImage(warpimage,0.3));
+        //imshow("other warp",fun.ResizeImage(otherwarp,0.3));
+        //imshow("mergeimage",fun.ResizeImage(mergeImage,0.3));
+
+        //write the video
+        laneVideo >> videoFrame;
+        if(videoFrame.empty()) break;
+
+
+        //Calibration
+        undistort(videoFrame, videoFrameUndistorted, cameraMatrix, dist);
+        _videoFrameUndistorted = videoFrameUndistorted.clone();
+        LaneAlgo.setInputImage(_videoFrameUndistorted);
+
+        if(waitKey(10) == 27) break;
+    }
+
+
 
     waitKey(0);
+    laneVideo.release();
+    destroyAllWindows();
     return 0;
 
 }

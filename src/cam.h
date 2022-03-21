@@ -19,8 +19,6 @@ class camera {
     void addPoints();
     void doCalibration(cv::Mat &cameraMatrix, cv::Mat &dist);
 
-
-
    private:
     std::vector<std::string> m_filenames;
     std::vector<std::vector<cv::Point2f>> m_srcPoints;
@@ -53,14 +51,12 @@ void camera::addPoints()
 
     // find chessboard 2d coordinates
     for(int i=0; i<m_filenames.size(); i++)
-    {
         image = cv::imread(m_filenames[i],cv::IMREAD_GRAYSCALE);
         if(chessboardCorner.size() == 54)
         {
             m_dstpoints.push_back(realWorldCoord);
             m_srcPoints.push_back(chessboardCorner);
         }
-    }
 }
 
 
@@ -70,12 +66,7 @@ void camera::doCalibration(cv::Mat &cameraMatrix, cv::Mat &dist)
     addPoints();
 
     std::vector<cv::Mat> rvecs,tvecs;
-
-    cv::calibrateCamera(m_dstpoints,m_srcPoints,m_imageSize,
-                                               cameraMatrix,
-                                               dist,
-                                               rvecs,
-                                               tvecs);
+    cv::calibrateCamera(m_dstpoints,m_srcPoints,m_imageSize,cameraMatrix,dist,rvecs,tvecs);
 }
 
 

@@ -49,10 +49,8 @@ class funciones{
             cin.get();
             return;
         }
-
-
-        int roi_width = img.rows * 0.5;
-        int roi_height = img.cols* 0.5;
+        //int roi_width = img.rows * 0.5;
+        //int roi_height = img.cols* 0.5;
 
 
         img = ResizeImage(img,0.5);
@@ -73,7 +71,7 @@ class funciones{
         imshow(name,img);
         //imshow("roirect",roi_image);
         //imshow("image gray",imgGray);
-        waitKey(0);
+        //waitKey(0);
 
     }
 

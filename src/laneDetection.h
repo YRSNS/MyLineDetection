@@ -3,10 +3,13 @@
 #include <algorithm>
 #include <Eigen/Dense>
 #include "math.h"
+#include "functions.h"
 
 using namespace cv;
 using namespace std;
 using namespace Eigen;
+
+funciones fun_;
 
 class laneDetection
 {
@@ -69,8 +72,7 @@ public:
 
 
 
-laneDetection::laneDetection(const Mat _oriImage, const Mat _perspectiveMatrix)
-:oriImage(_oriImage), perspectiveMatrix(_perspectiveMatrix), blockNum(9), windowSize(150), recordCounter(0), initRecordCount(0), failDetectFlag(true)
+laneDetection::laneDetection(const Mat _oriImage, const Mat _perspectiveMatrix):oriImage(_oriImage), perspectiveMatrix(_perspectiveMatrix), blockNum(9), windowSize(150), recordCounter(0), initRecordCount(0), failDetectFlag(true)
 {
     histogram.resize(_oriImage.size().width);
     midPoint = _oriImage.size().width >> 1;
@@ -107,24 +109,26 @@ void laneDetection::laneDetctAlgo()
     inRange(imageChannels[2], Scalar(200), Scalar(255),RedBinary);
     //Merge the binarized R channel image with edge detected image.
     add(warpEdgeImage, RedBinary, mergeImage);
-    //imshow("RedBinary",mergeImage);
+    imshow("RedBinary",fun_.ResizeImage(mergeImage,0.3));
+
 
 
     cvtColor(mergeImage, mergeImageRGB, COLOR_GRAY2RGB);
     //imshow("mergeImage_color",mergeImage);
 
     //Calculate the histogram.
-    calHist();
+    //calHist();
+    //imshow("Histograma",fun_.ResizeImage(histImage,0.3));
 
     //Detect the lane boundary.
-    boundaryDetection();
+    //boundaryDetection();
 
     //Lane curve fitting.
-    laneSearch(leftLanePos, laneL, laneLcount, curvePointsL, 'L');
-    laneSearch(rightLanePos, laneR, laneRcount, curvePointsR, 'R');
-    laneCoefEstimate();
-    laneFitting();
-    warpPerspective(maskImage, maskImageWarp, perspectiveMatrix, maskImage.size(),WARP_INVERSE_MAP);
+    //laneSearch(leftLanePos, laneL, laneLcount, curvePointsL, 'L');
+    //laneSearch(rightLanePos, laneR, laneRcount, curvePointsR, 'R');
+    //laneCoefEstimate();
+    //laneFitting();
+    //warpPerspective(maskImage, maskImageWarp, perspectiveMatrix, maskImage.size(),WARP_INVERSE_MAP);
 }
 
 
@@ -163,6 +167,8 @@ void laneDetection::boundaryDetection()
     int maxL = *maxLPtr;
     leftLanePos = distance(histogram.begin(),maxLPtr);
 
+    //cout <<" this is a macL: "<< maxL << endl;
+
 
     //find the right lane boudary position
     vector<int>::iterator maxRPtr;
@@ -170,12 +176,15 @@ void laneDetection::boundaryDetection()
     int maxR = *maxRPtr;
     rightLanePos = distance(histogram.begin(),maxRPtr);
 
+    //cout <<" this is a macR: "<< maxL << endl;
+
     //draw the lane boundary on iamge
     if((initRecordCount < 5) || (failDetectFlag == true))
     {
         line(mergeImageRGB, Point2f(leftLanePos, 0), Point2f(leftLanePos, mergeImageRGB.size().height), Scalar(0, 255, 0), 10);
         line(mergeImageRGB, Point2f(rightLanePos, 0), Point2f(rightLanePos, mergeImageRGB.size().height), Scalar(0, 255, 0), 10);
     }
+    //imshow("merge,,,,ImageRGB",fun_.ResizeImage(mergeImageRGB,0.3));
 }
 
 
@@ -258,6 +267,7 @@ void laneDetection::laneSearch(const int &lanePos, vector<Point2f> &_line, int &
                     }
                 }
                 rectangle(mergeImageRGB, Point2f(xLU, yLU), Point2f(xRB, yRB),Scalar(255, 0, 0), 5);
+                //imshow("hola",fun_.ResizeImage(mergeImageRGB,0.3));
             }
 
         }
@@ -297,7 +307,7 @@ void laneDetection::laneSearch(const int &lanePos, vector<Point2f> &_line, int &
             if(dir == 'L')
             {
                 leftLanePos = sumX;
-                line(mergeImageRGB, Point2f(leftLanePos, 0), Point2f(leftLanePos, mergeImageRGB.size().height), Scalar(0, 255, 0), 10);
+                line(mergeImageRGB, Point2f(leftLanePos, 0), Point2f(leftLanePos, mergeImageRGB.size().height), Scalar(0, 255,0), 10);
 
             }
             else
@@ -346,10 +356,7 @@ bool laneDetection::laneCoefEstimate()
             rightMatrix(i,1) = laneR[i].y;
             rightMatrix(i,2) = 1;
         }
-        //curveCoefL = leftMatrix.jacobiSvd(ComputeThinU | ComputeThinV).solve(xValueL);
-        //curveCoefR = rightMatrix.jacobiSvd(ComputeThinU | ComputeThinV).solve(xValueR);
-        //curveCoefL = leftMatrix.colPivHouseholderQr().solve(xValueL);
-        //curveCoefR = rightMatrix.colPivHouseholderQr().solve(xValueR);
+
         curveCoefL = (leftMatrix.transpose()*leftMatrix).ldlt().solve(leftMatrix.transpose()*xValueL);
         curveCoefR = (rightMatrix.transpose()*rightMatrix).ldlt().solve(rightMatrix.transpose()*xValueR);
 
@@ -367,7 +374,6 @@ bool laneDetection::laneCoefEstimate()
         return false;
     }
 }
-
 
 //To fit the lane.
 void laneDetection::laneFitting()
@@ -467,13 +473,4 @@ Mat laneDetection::getFinalResult()
 void laneDetection::setInputImage(Mat &image)
 {
     oriImage = image.clone();
-}
-
-float laneDetection::getLaneCenterDist()
-{
-    float laneCenter = ((rightLanePos - leftLanePos) / 2) + leftLanePos;
-    float imageCenter = mergeImageRGB.size().width / 2;
-    float result;
-    result = (laneCenter -imageCenter)* 3.5 / 600; //Assume the lane width is 3.5m and about 600 pixels in our image.
-    return result;
 }
